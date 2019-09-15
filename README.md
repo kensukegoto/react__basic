@@ -1,68 +1,145 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# props
 
-## Available Scripts
+コンポーネントへ値を渡す際に使用。
+変更不可能な値（cf. state）
 
-In the project directory, you can run:
+```js
+// 使う側
+const profiles = [
+    {name: "Taro",age:10},
+    {name: "Hanako",age:5},
+];
+return (
+    <div>
+    {
+        profiles.map((profile,index) => {
+            return <User name={profile.name} age={profile.age} key={index} />
+        })
+    }
+    </div>
+)
 
-### `npm start`
+// Userコンポーネントの中身
+const User = (proos) => {
+    return <div>I am {props.name}</div>
+}
+```
 
-Runs the app in the development mode.<br>
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+# prop-types
 
-The page will reload if you make edits.<br>
-You will also see any lint errors in the console.
+propsの型チェックをする際に使用。
 
-### `npm test`
+```js
+import PropTypes from 'prop-types';
 
-Launches the test runner in the interactive watch mode.<br>
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+const User = (proos) => {
+    return <div>I am {props.name}</div>
+}
 
-### `npm run build`
+// props.nameはstring型であることをチェックする
+// props.ageはnumber型であり、かつ必須要素であることをチェックする
+User.propTypes = {
+    name: PropTypes.string,
+    age: PropTypes.number.isRequired
+}
+```
 
-Builds the app for production to the `build` folder.<br>
-It correctly bundles React in production mode and optimizes the build for the best performance.
+# state
 
-The build is minified and the filenames include the hashes.<br>
-Your app is ready to be deployed!
+classコンポーネントで使用出来る。
+constructor内で初期化する。setState()メソッドで更新をする。setState()を使う事で再描画がされる。
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+```js
+class Counter extends Component {
+    constructor(props){
+        super(props)
+        this.state = {count:0}
+    }
 
-### `npm run eject`
+    handlePlusButton(){
+        this.setState({ count: this.state.count + 1 })
+    }
+    handleMinusButton(){
+        this.setState({ count: this.state.count ー 1 })
+    }
+    render(){
+        return (
+            <>
+                <div>count: {this.state.count}</div>
+                <button onClick={this.handlePlusButton}>+1</button>
+                <button onClick={this.handleMinusButton}>-1</button>
+            </>
+        )
+    }
+}
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+# Reducer
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+stateのおおがかかりなもの。状態の保持と変更をする。<br>
+カウンターを例にするとcountされた回数と増やしたり・減らしたりの変更をする。<br>
+storeと言う仕組みと一緒に使うことで**子コンポーネントへバケツリレーで状態を渡すことを回避出来る。**<br>
+（従来はpropsをバケツリレーしていたがそれを解消する仕組み。）
 
-Instead, it will copy all the configuration files and the transitive dependencies (Webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+## combineReducer
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+例えばカウンターの状態と別にカウンターの操作ログの状態を管理したい場合を想定。このときカウンターの状態と操作ログのそれぞれのReducerを作ることになる。本来ならば別々のReducerを呼び出す必要があるが、１つにまとめて扱えるようにしてくれる。
 
-## Learn More
+```js
+import {combineReducers} from 'redux'
+import count from './count'
+import actionLog from './actionLog'
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+export default combineReducers({ count,actionLog })
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## store
 
-### Code Splitting
+最上位コンポーネントで`const store = createStore(reducer)`したstoreを子コンポーネントで使う。
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/code-splitting
+```js
+// App.js
+import { connect } from 'react-redux'
+import {
+  increment,
+  decrement,
+} from '../actions'
 
-### Analyzing the Bundle Size
+~ 略 ~
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size
+const mapStateToProps = state => ({ value: state.count.value })
+const mapDispatchToProps = dispatch => ({
+  imcrement: () => dispatch(increment()),
+  decrement: () => dispatch(decrement())
+})
 
-### Making a Progressive Web App
+export default connect(mapStateToProps,mapDispatchToProps)(App)
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app
 
-### Advanced Configuration
+// actions/index.js
+~ 略 ~
+export const increment = () => ({
+    type: INCREMENT
+})
+~ 略 ~
+```
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/advanced-configuration
+この実装により状態管理をreducerに任せる事が可能となる。
 
-### Deployment
+```js
+import { INCREMENT,DECREMENT } from '../actions'
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/deployment
+const initialState = { value: 0 }
 
-### `npm run build` fails to minify
+export default (state = initialState,action) => {
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify
+  switch(action.type){
+    case INCREMENT:
+      return {value: state.value + 1}
+    case DECREMENT:
+      return {value: state.value - 1}
+    default:
+      return state
+  }
+}
+```
