@@ -109,8 +109,8 @@ import {
 
 const mapStateToProps = state => ({ value: state.count.value })
 const mapDispatchToProps = dispatch => ({
-  imcrement: () => dispatch(increment()),
-  decrement: () => dispatch(decrement())
+  imcrement: () => dispatch(increment()),　// dispatchはReducerを呼ぶ関数
+  decrement: () => dispatch(decrement())   // dispatchはReducerを呼ぶ関数
 })
 
 export default connect(mapStateToProps,mapDispatchToProps)(App)
